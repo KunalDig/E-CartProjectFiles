@@ -1,0 +1,50 @@
+Table Users {
+    user_id INT [pk]
+    username VARCHAR
+    email VARCHAR
+    password_hash VARCHAR
+    created_at TIMESTAMP
+}
+
+Table Products {
+    product_id INT [pk]
+    name VARCHAR
+    description TEXT
+    price DECIMAL
+    stock_quantity INT
+    created_at TIMESTAMP
+}
+
+Table Cart {
+    cart_id INT [pk]
+    user_id INT [ref: > Users.user_id]
+    product_id INT [ref: > Products.product_id]
+    quantity INT
+    added_at TIMESTAMP
+}
+
+Table Orders {
+    order_id INT [pk]
+    user_id INT [ref: > Users.user_id]
+    total_price DECIMAL
+    order_status ENUM
+    order_date TIMESTAMP
+}
+
+Table Order_Items {
+    order_item_id INT [pk]
+    order_id INT [ref: > Orders.order_id]
+    product_id INT [ref: > Products.product_id]
+    quantity INT
+    price DECIMAL
+}
+
+Table Transaction_History {
+    transaction_id INT [pk]
+    order_id INT [ref: > Orders.order_id]
+    user_id INT [ref: > Users.user_id]
+    amount DECIMAL
+    transaction_date TIMESTAMP
+    payment_method ENUM
+    status ENUM
+}
