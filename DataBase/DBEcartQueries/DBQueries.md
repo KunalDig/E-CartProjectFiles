@@ -1,5 +1,6 @@
-## * *users table*
+## *users table*
 
+~~~sql
 create table users(
 
 user_id int primary key auto_increment,
@@ -13,19 +14,23 @@ password varchar(200) unique not null,
 created_at timestamp default current_timestamp
 
 );
+~~~
 
 ex :
 
- desc users;
+~~~sql
+desc users;
 
- insert into users(user_id,username,email,password) values(0,'KD','kd@gmail.com','12345');
+insert into users(user_id,username,email,password) values(0,'KD','kd@gmail.com','12345');
 
 select * from users;
 
 truncate table users;
+~~~
 
-## *  products *table*
+## *products table*
 
+~~~sql
 create table products(
 
 product_id int primary key auto_increment,
@@ -41,9 +46,11 @@ stock_quantity int not null check (stock_quantity >= 0),
 created_at timestamp default current_timestamp
 
 );
+~~~
 
 ex:
 
+~~~sql
 desc products;
 
 insert into products(name,description,price,stock_quantity) values ('marie','It is cookie',10.00,3);
@@ -51,9 +58,11 @@ insert into products(name,description,price,stock_quantity) values ('marie','It 
 select * from products;
 
 truncate table products;
+~~~
 
-## * cart *table*
+## *cart table*
 
+~~~sql
 create table cart(
 
 cart_id int primary key auto_increment,
@@ -71,17 +80,21 @@ foreign key(user_id) references users(user_id) on delete cascade on update casca
 foreign key(product_id) references products(product_id) on delete cascade on update cascade
 
 );
+~~~
 
 ex :
 
+~~~sql
 desc cart;
 
 insert into cart (user_id, product_id, quantity) values(1, 1, 1) on duplicate key update quantity = quantity + 1;
 
 truncate table cart;
+~~~
 
-## * orders table
+## *orders table*
 
+~~~sql
 create table orders(
 
 order_id int primary key auto_increment,
@@ -97,9 +110,11 @@ order_date timestamp default current_timestamp,
 foreign key(user_id) references users(user_id) on delete cascade on update cascade
 
 );
+~~~
 
 ex :
 
+~~~sql
 desc orders;
 
 insert into orders (user_id, total_price, order_status) values
@@ -109,10 +124,12 @@ insert into orders (user_id, total_price, order_status) values
 select * from orders;
 
 truncate table orders;
+~~~
 
 
-## * orders_item table
+## *order_item table*
 
+~~~sql
 create table order_item(
 
 order_item_id int primary key auto_increment,
@@ -132,9 +149,11 @@ foreign key(product_id) references products(product_id) on delete cascade on upd
 constraint fk_order_exists foreign key (order_id) references orders(order_id) on delete cascade
 
 );
+~~~
 
 ex : 
 
+~~~sql
 desc order_item;
 
 insert into order_item (order_id, product_id, quantity, price) values
@@ -143,10 +162,12 @@ insert into order_item (order_id, product_id, quantity, price) values
 
 truncate table orders_item;
 
+~~~
 
 
-## * transaction_history table
+## *transaction_history table*
 
+~~~sql
 create table transaction_history(
 
 transaction_id int primary key auto_increment,
@@ -168,9 +189,11 @@ foreign key(order_id) references orders(order_id) on delete cascade on update ca
 foreign key(user_id) references users(user_id) on delete cascade on update cascade
 
 );
+~~~
 
 ex :
 
+~~~sql
 desc transaction_history;
 
 insert into transaction_history (order_id, user_id, amount, payment_method, status) values
@@ -187,3 +210,5 @@ when there is problem while truncating
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE Cart;
 SET FOREIGN_KEY_CHECKS = 1;
+
+~~~
