@@ -23,12 +23,37 @@ desc users;
 
 insert into users(user_id,username,email,password) values(0,'KD','kd@gmail.com','12345');
 
+alter table users add column role enum('admin', 'normal') default 'normal' not null;
+
+
 select * from users;
 
 truncate table users;
 ~~~
 
+## *permissions table*
+~~~sql
+create table permissions (
+    role enum('admin', 'normal') not null primary key,
+    can_check_stock boolean default true,
+    can_add_to_cart boolean default true,
+    can_add_product boolean default false
+);
+~~~
+
+~~~sql
+
+insert into permissions (role, can_add_product, can_check_stock, can_add_to_cart)
+values 
+('admin', true, true, false),
+('normal', false, true, true);
+~~~
+
+
+
 ## *products table*
+
+
 
 ~~~sql
 create table products(
