@@ -43,7 +43,7 @@ public class EcartApplication {
 					case 2: // logic for normal user login and his functionality
 						break;
 
-					case 3: //
+					case 3: // logged out 
 						System.out.println("Logged out");
 						AUflag = false;
 						break;
@@ -54,7 +54,7 @@ public class EcartApplication {
 				} while (AUflag);
 				break;
 
-			case 3: // Exit
+			case 3: // Exit from main app
 				logger.info("Exited from application");
 				flag = false;
 
