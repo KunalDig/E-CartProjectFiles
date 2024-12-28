@@ -5,18 +5,21 @@ import java.util.Scanner;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import model.OrdersModel;
 import model.ProductsModel;
 import model.UsersModel;
 import repository.DBConfig;
 import repository.DBSTATE;
 import service.AuthService;
 import service.AuthServiceImpl;
+import service.CartService;
+import service.CartServiceImpl;
 import service.ProductsService;
 import service.ProductsServiceImpl;
 import service.UsersService;
 import service.UsersServiceImpl;
 
-public class EcartApplication extends DBSTATE{
+public class EcartApplication extends DBSTATE {
 	private static Logger logger = Logger.getLogger(DBConfig.class);
 	static {
 		PropertyConfigurator.configure(
@@ -28,7 +31,7 @@ public class EcartApplication extends DBSTATE{
 		logger.info("Main method started...");
 		boolean flag = true;
 		Scanner sc = new Scanner(System.in);
-
+		UsersModel usersModel = new UsersModel();
 		do {
 			System.out.println("1. Register as admin or normal user(user) \n2. Login as admin or user : \n3. Exit");
 			System.out.println("ENTER YOUR CHOICE : ");
@@ -36,7 +39,7 @@ public class EcartApplication extends DBSTATE{
 			switch (choice) {
 			case 1:// Register as admin or normal user(user)
 				UsersService usersService = new UsersServiceImpl();
-				UsersModel usersModel = new UsersModel();
+
 				System.out.println("Enter Username:");
 				String username = sc.next();
 				usersModel.setUsername(username);
@@ -90,6 +93,8 @@ public class EcartApplication extends DBSTATE{
 						do {
 							ProductsModel productsModel = new ProductsModel();
 							ProductsService productsService = new ProductsServiceImpl();
+							OrdersModel ordersModel = new OrdersModel();
+
 							System.out.println(
 									"1. Add Product\n2. Update Product\n3. Delete Product\n4. View Stock\n5. Display all products\n6. view all orders\n7. Update Order Status\n8. View Transaction History\n9. Exit");
 							System.out.println("ENTER YOUR CHOICE : ");
@@ -134,30 +139,27 @@ public class EcartApplication extends DBSTATE{
 								System.out.println(
 										"Enter the field to update (name, description, price, stock_quantity):");
 								String fieldToUpdate = sc.nextLine();
-								
+
 								System.out.println("Enter the new value:");
-						        Object newValue = null;
-						        if (fieldToUpdate.equalsIgnoreCase("name")) {
-						            newValue = sc.nextLine();
-						        } else if (fieldToUpdate.equalsIgnoreCase("description")) {
-						            newValue = sc.nextLine();
-						        } else if(fieldToUpdate.equalsIgnoreCase("price")) {
-						            newValue = sc.nextDouble();
-						        }
-						        else if(fieldToUpdate.equalsIgnoreCase("stock_quantity")) {
-						        	newValue = sc.nextInt();
-						        }
-						        else {
-						        	System.out.println("Wrong field");
-						        }
-								
-						        b = productsService.updateProduct(productsModel, fieldToUpdate, newValue);
-						        if(b) {
-						        	System.out.println("Product updated succesfully.");
-						        }
-						        else {
-						        	System.out.println("Product is not updated.");
-						        }
+								Object newValue = null;
+								if (fieldToUpdate.equalsIgnoreCase("name")) {
+									newValue = sc.nextLine();
+								} else if (fieldToUpdate.equalsIgnoreCase("description")) {
+									newValue = sc.nextLine();
+								} else if (fieldToUpdate.equalsIgnoreCase("price")) {
+									newValue = sc.nextDouble();
+								} else if (fieldToUpdate.equalsIgnoreCase("stock_quantity")) {
+									newValue = sc.nextInt();
+								} else {
+									System.out.println("Wrong field");
+								}
+
+								b = productsService.updateProduct(productsModel, fieldToUpdate, newValue);
+								if (b) {
+									System.out.println("Product updated succesfully.");
+								} else {
+									System.out.println("Product is not updated.");
+								}
 
 								break;
 
@@ -166,12 +168,11 @@ public class EcartApplication extends DBSTATE{
 								System.out.println("Enter ID of product to be deleted : ");
 								int productIdToDelete = sc.nextInt();
 								productsModel.setProduct_id(productIdToDelete);
-								
+
 								b = productsService.deleteProduct(productsModel);
-								if(b) {
+								if (b) {
 									System.out.println("Product removed succesfully.");
-								}
-								else {
+								} else {
 									System.out.println("Product could not be removed.");
 								}
 								break;
@@ -189,9 +190,30 @@ public class EcartApplication extends DBSTATE{
 								productsService.viewAllOrders();
 								break;
 							case 7:// Update Order Status
+								sc.nextLine();
+								System.out.println("Enter order id : ");
+								int orderId = sc.nextInt();
+								sc.nextLine();
+								ordersModel.setOrder_id(orderId);
 
+								System.out.println(
+										"Enter new status (Pending, Processing, Shipped, Delivered, Cancelled.): ");
+								String status = sc.nextLine();
+
+								b = productsService.updateOrderStatus(ordersModel, status);
+								if (b) {
+									System.out.println("Order status updated successfuly.");
+								} else {
+									System.out.println("Order status could not be updated.");
+								}
 								break;
 							case 8:// View Transaction History
+								sc.nextLine();
+								System.out.println("Enter user ID : ");
+								int userID = sc.nextInt();
+								sc.nextLine();
+								usersModel.setUserId(userID);
+								productsService.viewUserTransactionHistory(usersModel);
 
 								break;
 							case 9:// Exit
@@ -207,6 +229,89 @@ public class EcartApplication extends DBSTATE{
 						break;
 
 					case 2: // logic for normal user login and his functionality
+						if (role == "normal") {
+							System.out.println("Not a admin!!! Cannot continue");
+							break;
+						}
+						ProductsModel productsModel = new ProductsModel();
+						ProductsService productsService = new ProductsServiceImpl();
+						OrdersModel ordersModel = new OrdersModel();
+						CartService cartService = new CartServiceImpl();
+						boolean userFlag = true;
+						do {
+							System.out.println(
+									"1. View All Products\n2. View Product Stock\n3. Add Product to Cart\n4. View Cart\n5. Remove Product from Cart\n6. Place an Order\n7. View Order History\n8. View Transaction History\n9. Cancel an Order\n10. Update Cart\n11. Exit");
+							System.out.println("Enter choice : ");
+							int userFuncChoice = sc.nextInt();
+							switch (userFuncChoice) {
+							case 1:// View all Products
+								productsService.displayAllProducts();
+								break;
+							case 2:// View Product Stock
+								sc.nextLine();
+								System.out.println("Enter name of product :");
+								String pName = sc.nextLine();
+								productsModel.setName(pName);
+								
+								productsService.viewProductStockByName(productsModel);
+
+								break;
+							case 3:// Add Product to Cart
+								sc.nextLine();
+								System.out.println("Enter userID : ");
+								int userIdForAddCart = sc.nextInt();
+								sc.nextLine();
+								usersModel.setUserId(userIdForAddCart);
+								
+								System.out.println("Enter product ID : ");
+								int prodIdForAddCart = sc.nextInt();
+								sc.nextLine();
+								productsModel.setProduct_id(prodIdForAddCart);
+								
+								System.out.println("Enter qunatity of product to add : ");
+								int quantityToAddCart = sc.nextInt();
+								sc.nextLine();
+								
+								boolean resAdd = cartService.addProductToCart(usersModel, productsModel, quantityToAddCart);
+								if(resAdd) {
+									System.out.println("Product added successfully in cart.");
+								}
+								else {
+									System.out.println("Product could not be added in cart.");
+								}
+
+								break;
+							case 4:// View Cart
+
+								break;
+							case 5:// Remove Product from Cart
+
+								break;
+							case 6:// Place an Order
+
+								break;
+							case 7:// View Order History
+
+								break;
+							case 8:// View Transaction History
+
+								break;
+							case 9:// Cancel an Order
+
+								break;
+							case 10:// Update Cart
+
+								break;
+							case 11:// Exit
+								userFlag = false;
+
+								break;
+
+							default:
+								System.out.println("Invalid choice");
+								break;
+							}
+						} while (userFlag);
 						break;
 
 					case 3: // logged out
@@ -232,7 +337,5 @@ public class EcartApplication extends DBSTATE{
 		} while (flag);
 		sc.close();
 	}
-	
-	
 
 }

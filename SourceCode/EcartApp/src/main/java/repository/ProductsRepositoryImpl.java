@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import model.OrdersModel;
 import model.ProductsModel;
+import model.UsersModel;
 
 public class ProductsRepositoryImpl extends DBSTATE implements ProductsRepository {
 	private static Logger logger = Logger.getLogger(DBConfig.class);
@@ -143,6 +145,7 @@ public class ProductsRepositoryImpl extends DBSTATE implements ProductsRepositor
 
 	public void displayAllProducts() {
 		try {
+			logger.info("displayAllProducts method is called.");
 			String query = "select product_id, name, description, price, stock_quantity from products";
 			stmt = conn.prepareStatement(query);
 			rs = stmt.executeQuery();
@@ -168,6 +171,7 @@ public class ProductsRepositoryImpl extends DBSTATE implements ProductsRepositor
 
 	public void viewAllOrders() {
 		try {
+			logger.info("viewAllOrders method is called.");
 			String query = "SELECT o.order_id, o.user_id, u.username, o.total_price, o.order_status,  o.order_date FROM orders o  INNER JOIN users u ON o.user_id = u.user_id ";
 
 			String itemQuery = "SELECT oi.order_id, p.name AS product_name, oi.quantity, oi.price  FROM order_item oi INNER JOIN products p ON oi.product_id = p.product_id WHERE oi.order_id = ?";
@@ -217,6 +221,106 @@ public class ProductsRepositoryImpl extends DBSTATE implements ProductsRepositor
 		}
 
 	}
+	
+	public boolean updateOrderStatus(OrdersModel model, String newStatus) {
+		try {
+			logger.info("updateOrderStatus method is called.");
+			// Validate the new status
+	        if (!isValidOrderStatus(newStatus)) {
+	            System.out.println("Invalid order status. Allowed values: Pending, Processing, Shipped, Delivered, Cancelled.");
+	            return false;
+	        }
+	        
+	        // Check if the order exists
+	        if (!isOrderPresent(model)) {
+	            System.out.println("Order with ID " + model.getOrder_id() + " does not exist.");
+	            return false;
+	        }
+	        
+	        String updateQuery = "update orders set order_status = ? where order_id = ?";
+	        stmt = conn.prepareStatement(updateQuery);
+	        stmt.setString(1, newStatus);
+            stmt.setInt(2, model.getOrder_id());
+            int rowsUpdated = stmt.executeUpdate();
+            if (rowsUpdated > 0) {
+                logger.info("order status updated");
+                return true;
+            } else {
+                logger.warn("Some problem in updating status.");
+            }
+		} catch (Exception e) {
+			logger.error("Error in updateOrderStatus ", e);
+		}
+		return false;
+	}
+	
+	public void viewUserTransactionHistory(UsersModel model) {
+		try {
+			logger.info("viewUserTransactionHistorys method is called.");
+			// Check if the user exists
+	        if (!isUserPresent(model)) {
+	            System.out.println("User with ID " + model.getUserId() + " does not exist.");
+	            return;
+	        }
+	     // SQL query to retrieve transaction history
+	        String query = "SELECT t.transaction_id, t.order_id, t.amount, t.transaction_date, " +
+	                       "t.payment_method, t.status, o.order_status " +
+	                       "FROM transaction_history t " +
+	                       "JOIN orders o ON t.order_id = o.order_id " +
+	                       "WHERE t.user_id = ?";
+	        stmt = conn.prepareStatement(query);
+	        stmt.setInt(1, model.getUserId());
+	        rs = stmt.executeQuery();
+	        System.out.printf("%-15s %-10s %-10s %-25s %-15s %-10s %-10s%n",
+                    "Transaction ID", "Order ID", "Amount", "Transaction Date",
+                    "Payment Method", "Status", "Order Status");
+	        boolean hasTransactions = false;
+            while (rs.next()) {
+                hasTransactions = true;
+                System.out.printf("%-15d %-10d %-10.2f %-25s %-15s %-10s %-10s%n",
+                        rs.getInt("transaction_id"),
+                        rs.getInt("order_id"),
+                        rs.getDouble("amount"),
+                        rs.getTimestamp("transaction_date"),
+                        rs.getString("payment_method"),
+                        rs.getString("status"),
+                        rs.getString("order_status"));
+            }
+            if (!hasTransactions) {
+                System.out.println("No transactions found for the user with ID " + model.getUserId() + ".");
+            }
+
+		} catch (Exception e) {
+			logger.error("error in viewUserTransactionHistory method ", e);
+		}
+		
+	}
+	
+	public void viewProductStockByName(ProductsModel model) {
+		try {
+			logger.info("viewProductStockByName method is called.");
+			if (!isProductPresentByName(model)) {
+	            System.out.println("Product with name '" + model.getName() + "' does not exist.");
+	            return;
+	        }
+			
+			 // SQL query to get the stock quantity
+	        String query = "SELECT stock_quantity FROM products WHERE name = ?";
+	        
+	        stmt = conn.prepareStatement(query);
+	        stmt.setString(1, model.getName());
+	        rs = stmt.executeQuery();
+	        if (rs.next()) {
+                int stockQuantity = rs.getInt("stock_quantity");
+                System.out.println("Stock for product '" + model.getName() + "': " + stockQuantity);
+            }
+        
+		} catch (Exception e) {
+			logger.error("error in viewProductStockByName method ", e);
+		}
+		
+	}
+	
 
 	public boolean isValidField(String field) {
 		// List of valid fields that can be updated
@@ -245,5 +349,62 @@ public class ProductsRepositoryImpl extends DBSTATE implements ProductsRepositor
 		}
 		return false;
 	}
+
+	public boolean isOrderPresent(OrdersModel model) {
+		try {
+			String query = "select count(*) from orders where order_id = ?";
+			stmt = conn.prepareStatement(query);
+			stmt.setInt(1, model.getOrder_id());
+			rs = stmt.executeQuery();
+			if (rs.next() && rs.getInt(1) > 0) {
+				return true; // Order exists
+			}
+		} catch (Exception e) {
+			logger.error("Something went wrong in isOrderPresent :" + e);
+		}
+		return false;
+	}
+
+	public boolean isValidOrderStatus(String status) {
+		return status.equals("Pending") || status.equals("Processing") || status.equals("Shipped")
+				|| status.equals("Delivered") || status.equals("Cancelled");
+	}
+
+	public boolean isUserPresent(UsersModel model) {
+		try {
+			 String query = "select count(*) from users where user_id = ?";
+			 stmt = conn.prepareStatement(query);
+			 stmt.setInt(1, model.getUserId());
+			 rs = stmt.executeQuery();
+			  if (rs.next() && rs.getInt(1) > 0) {
+                  return true; // User exists
+              }
+		} catch (Exception e) {
+			logger.error("error in isUserPresent method ", e);
+		}
+		return false;
+	}
+
+	public boolean isProductPresentByName(ProductsModel model) {
+		try {
+			logger.info("isProductPresentByName method is called.");
+			String query = "SELECT COUNT(*) FROM products WHERE name = ?";
+			stmt = conn.prepareStatement(query);
+			stmt.setString(1, model.getName());
+			rs = stmt.executeQuery();
+			if (rs.next() && rs.getInt(1) > 0) {
+                return true;
+            }
+		} catch (Exception e) {
+			logger.error("Error in isProductPresentByName ", e);
+		}
+		
+		return false;
+	}
+
+	
+	
+
+	
 
 }

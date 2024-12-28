@@ -1,6 +1,8 @@
 package repository;
 
+import model.OrdersModel;
 import model.ProductsModel;
+import model.UsersModel;
 
 public interface ProductsRepository {
 	public boolean addProduct(ProductsModel model);
@@ -18,4 +20,19 @@ public interface ProductsRepository {
 	public void displayAllProducts();
 	
 	public void viewAllOrders();
+	
+	public boolean isOrderPresent(OrdersModel model);
+	
+	public boolean isValidOrderStatus(String status);
+	
+	public boolean updateOrderStatus(OrdersModel model, String newStatus);
+	
+	public boolean isUserPresent(UsersModel model);
+	
+	public void viewUserTransactionHistory(UsersModel model);
+	
+	public boolean isProductPresentByName(ProductsModel model);
+	
+	public void viewProductStockByName(ProductsModel model);
+	
 }
